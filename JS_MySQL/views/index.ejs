@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Test</title>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+</head>
+
+<style>
+    table {
+        background-color: rgb(236, 236, 236);
+    }
+    button {
+        border: none;
+        background-color: pink;
+    }
+</style>
+
+<body>
+    <div>
+        <h1>Examining Air Quality: A Pollution Analysis</h1>
+        <p>To what extent do manufacturing output and environmental performance impact air pollution?</p>
+    </div>
+    <div>
+        <h3>Top 5 Countries with the highest average PM 2.5</h3><table id="topT"></table>
+    </div>
+    <div>
+        <h3>Bottom 5 with the lowest average PM 2.5</h3><table id="bottomT"></table>
+    </div>
+    <div class="analysis">
+        <div id="resOutput">
+            <h4>Manufacturing Output</h4>
+        </div>
+        <div id="resEpi">
+            <h4>EPI</h4>
+        </div>
+    </div>
+</body>
+<script type="text/javascript">
+    // Use data coming through mysql
+    const data = JSON.parse('<%- data %>');
+
+    // Declare the commonly used variables
+    const colSize = [ 100, 150, 150, 200, 250 ];
+    const valStartIdx = 2;
+    const cols = "<tr>\
+        <th width=" + colSize[0] + ">Country</th>\
+        <th width=" + colSize[1] + ">PM Catetory</th>\
+        <th width=" + colSize[valStartIdx] + ">Average PM2.5</th>\
+        <th width=" + colSize[valStartIdx + 1] + ">Manufacturing Output</th>\
+        <th width=" + colSize[valStartIdx + 2] + ">Environmental Performance Index</th>\
+        </tr>";
+
+    // Get elements
+    var eleTop = document.getElementById("topT");
+    var eleBtt = document.getElementById("bottomT");
+
+    // Retrieve indices of the array for the countries with the maximum manufacturing output and EPI, respectively
+    // Only the top 5 and bottom 5 countries are considered
+    // Note that the array is in descending order by average PM 2.5
+    var idxMaxOutput = 0.0;
+    var idxMaxEpi = 0.0;
+    for (var i = 0; i < 10; ++i) {
+        var idx = data.length - (10 - i);
+        if (i < 5) { idx = i; }
+        if (idx < 0) {
+            console.log("[ Error ] Index is minus");
+            break;
+        }
+
+        const output = parseFloat(data[idx].Output);
+        const epi = parseFloat(data[idx].EPI);
+
+        if (data[idxMaxOutput].Output < output) {
+            idxMaxOutput = idx;
+        }
+        if (data[idxMaxEpi].EPI < epi) {
+            idxMaxEpi = idx;
+        }
+    }
+    
+    eleTop.innerHTML += cols;
+    eleBtt.innerHTML += cols;
+    for (var i = 0; i < 10; ++i) {
+        var idx = data.length - (10 - i);
+        if (i < 5) { idx = i; }
+        if (idx < 0) { 
+            console.log("[ Error ] Index is minus");
+            break; 
+        }
+
+        // Declare the necessary variables
+        const country = data[idx].Country;
+        const pm = parseFloat(data[idx].AveragePM);
+        const output = parseFloat(data[idx].Output);
+        const epi = parseFloat(data[idx].EPI);
+        const curOutputRatio = (output / data[idxMaxOutput].Output);
+        const curEpiRatio = (epi / data[idxMaxEpi].EPI);
+
+        // Make two tables for top 5 and bottom 5 countries respectively
+        if (i < 5) {
+            eleTop.innerHTML += "<tr>\
+                <td width=" + colSize[0] + ">" + country + "</td>\
+                <td width=" + colSize[1] + "><button id='idCat_" + idx + "'>" + data[idx].Category + "</button></td>\
+                <td width=" + colSize[valStartIdx] + "><button id='" + idx + "_" + valStartIdx + "'></button></td>\
+                <td width=" + colSize[valStartIdx + 1] + "><button id='" + idx + "_" + (valStartIdx + 1) + "'></button></td>\
+                <td width=" + colSize[valStartIdx + 2] + "><button id='" + idx + "_" + (valStartIdx + 2) + "'></button></td>\
+                </tr>";
+        } else {
+            eleBtt.innerHTML += "<tr>\
+                <td width=" + colSize[0] + ">" + country + "</td>\
+                <td width=" + colSize[1] + "><button id='idCat_" + idx + "'>" + data[idx].Category + "</button></td>\
+                <td width=" + colSize[valStartIdx] + "><button id='" + idx + "_" + valStartIdx + "'></button></td>\
+                <td width=" + colSize[valStartIdx + 1] + "><button id='" + idx + "_" + (valStartIdx + 1) + "'></button></td>\
+                <td width=" + colSize[valStartIdx + 2] + "><button id='" + idx + "_" + (valStartIdx + 2) + "'></button></td>\
+                </tr>";
+        }
+
+        if (pm < 35.5) {
+            document.getElementById("idCat_" + idx).setAttribute("style", "text-align: centrer; width: 100%; background-color: rgb(250,255,120)");
+        } else {
+            document.getElementById("idCat_" + idx).setAttribute("style", "text-align: centrer; width: 100%; background-color: rgb(255,100,75)");
+        }
+
+        
+        document.getElementById(idx + "_" + valStartIdx).setAttribute("style", "text-align: left; width: " + ((pm / parseFloat(data[0].AveragePM)) * (colSize[valStartIdx])) + "px;");
+        document.getElementById(idx + "_" + valStartIdx).innerText = pm.toFixed(1);
+
+        document.getElementById(idx + "_" + (valStartIdx + 1)).setAttribute("style", "text-align: left; width: " + (curOutputRatio * colSize[valStartIdx + 1]) + "px;");
+        document.getElementById(idx + "_" + (valStartIdx + 1)).innerText = output.toFixed(2) + "(" + (curOutputRatio * 100.0).toFixed(1) + "%)";
+
+        document.getElementById(idx + "_" + (valStartIdx + 2)).setAttribute("style", "text-align: left; width: " + (curEpiRatio * colSize[valStartIdx + 2]) + "px;");
+        document.getElementById(idx + "_" + (valStartIdx + 2)).innerText = epi.toFixed(1) + "(" + (curEpiRatio * 100.0).toFixed(1) + "%)";
+        
+
+        // Find the country with the highest manufacturing output level
+        if (output == data[idxMaxOutput].Output) {
+            var resDiv = document.getElementById("resOutput");
+            {
+                var t = country + " was reported as the country with the worst air pollution, attributed to its highest manufacturing output.";
+                var resT = document.createTextNode(t);
+                var resP = document.createElement("p");
+                resP.appendChild(resT);
+                resDiv.appendChild(resP);
+            }
+            // Check how much lower its EPI is than other countries
+            if (epi < data[idxMaxEpi].EPI) {
+                var t = (country + "'s EPI is " + ((1 - curEpiRatio) * 100.0).toFixed(1) + "% lower compared to " + data[idxMaxEpi].Country + ", which has the highest EPI.");
+                var resT = document.createTextNode(t);
+                var resP = document.createElement("p");
+                resP.appendChild(resT);
+                resDiv.appendChild(resP);
+            }
+        }
+        // Find the country with the highest EPI
+        if (epi == data[idxMaxEpi].EPI) {
+            var resDiv = document.getElementById("resEpi");
+            {
+                var t = country + " was identified as the country with the most proactive environmental performance, credited to its highest EPI (" + epi + ").";
+                var resT = document.createTextNode(t);
+                var resP = document.createElement("p");
+                resP.appendChild(resT);
+                resDiv.appendChild(resP);
+            }
+            // Check how much lower its manufacturing output level is than other countries
+            if (output < data[idxMaxOutput].Output) {
+                var t = (country + "'s manufacturing output is " + ((1 - curOutputRatio) * 100.0).toFixed(1) + "% less compared to " + data[idxMaxOutput].Country + ", which has the highest manufacturing output.");
+                var resT = document.createTextNode(t);
+                var resP = document.createElement("p");
+                resP.appendChild(resT);
+                resDiv.appendChild(resP);
+            }
+        }
+    }
+</script>
+</html>
