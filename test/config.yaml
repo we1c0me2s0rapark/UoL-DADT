@@ -1,0 +1,6 @@
+air_pollution:
+    root: 'C:\Users\sorapark\Github\UoL-DADT\data\air_pollution'
+    data:
+        air_quality: 'air_quality.csv'
+        epi: 'epi_results_2022.csv'
+        output: 'manufacturing_output.csv'
